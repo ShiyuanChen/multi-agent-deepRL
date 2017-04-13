@@ -32,6 +32,7 @@ class multiAgentEnv(object):
         self.action_space = actionSpace(num_actions)
         self.directions = [1, 0, -1, 0, 1]
         self.resetted = False
+        plt.ion()
 
     def printInfo(self):
         print('grid_size: ', self.grid_size)
@@ -68,8 +69,9 @@ class multiAgentEnv(object):
         img[self.frame == GRID_VISITED] = [150, 150, 150]
         # img[self.frame == GRID_OBSTACLE] = [0, 0, 0]
         img[self.frame == GRID_AGENT] = [255, 0, 0]
+
         plt.imshow(img)
-        plt.show()
+        plt.draw()
         return img
 
     def resetAll(self):
