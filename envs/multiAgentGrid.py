@@ -1,12 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Reward: collision=-5; visit new cell=1; else=0
+REWARD_COLLISION = -5
+REWARD_VISIT = 1
+REWARD_NONE = 0
+
+# Grid label: unvisited cell=0; visited cell=1; obstacle/boundary=2; occupied by agent=3
+GRID_EMPTY = 0
+GRID_VISITED = 1
+GRID_OBSTACLE = 2
+GRID_AGENT = 3
+
 class actionSpace(object):
     def __init__(self, num_actions=4):
         self.n = num_actions
 
 
 class multiAgentEnv(object):
+
     def __init__(self, grid_size=(100,100), num_actions=4, num_agents=5, obstacle_numrange=(5,10), obstacle_sizerange=(2, 20), sensor_range=(10,10)):    
         assert(num_actions > 0 and num_agents > 0 and obstacle_numrange[0] <= obstacle_numrange[1] and
                obstacle_sizerange[0] <= obstacle_sizerange[1] and sensor_range[0] >= 0 and sensor_range[1] >= 0)
@@ -29,30 +41,33 @@ class multiAgentEnv(object):
         print('sensor_range: ', self.sensor_range)
 
     def gridToCenteredObservation(self, agent_pos):
-        """ agent-centered view"""
+        """ agent-centered view
+        """
         assert(agent_pos.ndim == 1)
         observation = np.zeros((2 * self.sensor_range[0] + 1, 2 * self.sensor_range[1] + 1, 3), dtype='uint8')
         for x in xrange(agent_pos[0] - self.sensor_range[0], agent_pos[0] + self.sensor_range[0] + 1):
             for y in xrange(agent_pos[1] - self.sensor_range[1], agent_pos[1] + self.sensor_range[1] + 1):
                 xx = x - agent_pos[0] + self.sensor_range[0]
                 yy = y - agent_pos[1] + self.sensor_range[1]
-                if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] == 2:
+                if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] == GRID_OBSTACLE:
                     observation[xx][yy] = [0, 0, 0]
-                elif self.frame[x][y] == 0:
+                elif self.frame[x][y] == GRID_EMPTY:
                     observation[xx][yy] = [255, 255, 255]
-                elif self.frame[x][y] == 1:
+                elif self.frame[x][y] == GRID_VISITED:
                     observation[xx][yy] = [150, 150, 150]
                 else:
                     observation[xx][yy] = [255, 0, 0]
         return observation
 
     def render(self):
-        """ agent-centered view"""
+        """ render the whole grid
+            TODO: non-blocking plot
+        """
         img = np.zeros((self.frame.shape[0], self.frame.shape[1], 3), dtype = 'uint8')
-        img[self.frame == 0] = [255, 255, 255]
-        img[self.frame == 1] = [150, 150, 150]
-        img[self.frame == 2] = [0, 0, 0]
-        img[self.frame == 3] = [255, 0, 0]
+        img[self.frame == GRID_EMPTY] = [255, 255, 255]
+        img[self.frame == GRID_VISITED] = [150, 150, 150]
+        # img[self.frame == GRID_OBSTACLE] = [0, 0, 0]
+        img[self.frame == GRID_AGENT] = [255, 0, 0]
         plt.imshow(img)
         plt.show()
         return img
@@ -81,7 +96,7 @@ class multiAgentEnv(object):
             self.obstacle_size[i][1] = h
 
             # added obstacle to grid
-            self.grid[x:(x + w - 1), y:(y + h - 1)] = 2
+            self.grid[x:(x + w - 1), y:(y + h - 1)] = GRID_OBSTACLE
 
         self.frame = np.copy(self.grid)
 
@@ -92,19 +107,19 @@ class multiAgentEnv(object):
             while (flag):
                 x = np.random.randint(0, self.grid_size[0])
                 y = np.random.randint(0, self.grid_size[1])
-                if (self.frame[x][y] <= 1):
+                if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
                     flag = False
 
             self.agent_pos[i][0] = x
             self.agent_pos[i][1] = y
-            self.frame[x][y] = 3
+            self.frame[x][y] = GRID_AGENT
 
         for i in xrange(self.num_agents):
             self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
 
         for x in xrange(self.grid_size[0]):
             for y in xrange(self.grid_size[1]):
-                if self.frame[x][y] == 0:
+                if self.frame[x][y] == GRID_EMPTY:
                     self.unvisited_count += 1
 
         return self.observations
@@ -124,25 +139,28 @@ class multiAgentEnv(object):
             while (flag):
                 x = np.random.randint(0, self.grid_size[0])
                 y = np.random.randint(0, self.grid_size[1])
-                if (self.frame[x][y] <= 1):
+                if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
                     flag = False
 
             self.agent_pos[i][0] = x
             self.agent_pos[i][1] = y
-            self.frame[x][y] = 3
+            self.frame[x][y] = GRID_AGENT
 
         for i in xrange(self.num_agents):
             self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
 
         for x in xrange(self.grid_size[0]):
             for y in xrange(self.grid_size[1]):
-                if self.frame[x][y] == 0:
+                if self.frame[x][y] == GRID_EMPTY:
                     self.unvisited_count += 1
 
         return self.observations
 
     def step(self, actions):
-        """
+        """ actions: list of action values
+
+            Return:
+            observations
             Reward: -5: collision; 1: unvisited; 0: visited
         """
         assert(len(actions) == self.num_agents and self.resetted)
@@ -155,21 +173,21 @@ class multiAgentEnv(object):
         for agentid in order:
             x = self.agent_pos[agentid][0] + self.directions[actions[agentid]]
             y = self.agent_pos[agentid][1] + self.directions[actions[agentid] + 1]
-            if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] >= 2:
-                rewards[agentid] = -5
-            elif self.frame[x][y] == 1:
-                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = 1
-                self.frame[x][y] = 3
+            if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] >= GRID_OBSTACLE:
+                rewards[agentid] = REWARD_COLLISION
+            elif self.frame[x][y] == GRID_VISITED:
+                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = GRID_VISITED
+                self.frame[x][y] = GRID_AGENT
                 self.agent_pos[agentid][0] = x
                 self.agent_pos[agentid][1] = y
-                rewards[agentid] = 0
+                rewards[agentid] = REWARD_NONE
             else:
-                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = 1
-                self.frame[x][y] = 3
+                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = GRID_VISITED
+                self.frame[x][y] = GRID_AGENT
                 self.agent_pos[agentid][0] = x
                 self.agent_pos[agentid][1] = y
                 self.unvisited_count -= 1
-                rewards[agentid] = 1
+                rewards[agentid] = REWARD_VISIT
 
         for i in xrange(self.num_agents):
             self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
