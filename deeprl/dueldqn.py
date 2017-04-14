@@ -2,13 +2,14 @@
 import os
 from deeprl.policy import UniformRandomPolicy, GreedyPolicy, GreedyEpsilonPolicy, LinearDecayGreedyEpsilonPolicy
 from deeprl.objectives import huber_loss, mean_huber_loss
-from keras.models import Sequential, Model
+# from deeprl_hw2.layers import SharedBias
+from keras.models import Model
 import keras.backend as K
 from keras.layers import Lambda, Input, Layer, Dense
 import numpy as np
 from gym import wrappers
 
-class DQNAgent:
+class DuelDQNAgent:
     """Class implementing DQN.
 
     This is a basic outline of the functions/parameters you will need
@@ -58,7 +59,7 @@ class DQNAgent:
                  train_freq,
                  batch_size,
                  output_dir,
-                 max_grad=1.):
+                 max_grad=10.):
 
         self.model = q_network
         self.preprocessor = preprocessor
@@ -66,7 +67,7 @@ class DQNAgent:
         self.policy = policy
         self.policy.set_agent(agent=self)
         # policy for evaluation
-        self.eval_policy = GreedyEpsilonPolicy(epsilon=.05)
+        self.eval_policy = GreedyEpsilonPolicy(epsilon=.001)
 
         self.num_actions = num_actions
         self.gamma = gamma
@@ -98,7 +99,7 @@ class DQNAgent:
         """
         # create target model
         config = self.model.get_config()
-        self.target_model = Sequential.from_config(config)
+        self.target_model = Model.from_config(config)
         self.target_model.set_weights(self.model.get_weights())
         print(self.target_model.summary())
         # compile both models. Trainable model will have separate loss later
@@ -156,7 +157,6 @@ class DQNAgent:
         --------
         selected action
         """
-
         q_values = self.calc_q_values(state)
         if isTraining:
             return self.policy.select_action(q_values=q_values)
@@ -181,14 +181,16 @@ class DQNAgent:
         metrics = []
         # Skip update if burn-in or not at the step for update
         if self.step > self.num_burn_in and self.step % self.train_freq == 0:
-            # minibatch forward pass
+            # minibatch forward pass. Apply double DQN update rule
             samples = self.memory.sample(self.batch_size)
             states, actions, rewards, next_states, terminals = self.preprocessor.process_batch(samples)
-            
-            target_q_values = self.target_model.predict_on_batch(next_states)
-            max_target_q_values = np.max(target_q_values, axis=1).flatten()
+            model_q_values = self.model.predict_on_batch(next_states)
+            best_actions = np.argmax(model_q_values, axis=1)
 
             sample_size = states.shape[0]
+            target_q_values = self.target_model.predict_on_batch(next_states)
+            max_target_q_values = target_q_values[np.arange(sample_size), best_actions]
+            
             target_g_values = np.zeros((sample_size, self.num_actions))
             masks = np.zeros((sample_size, self.num_actions))
 
@@ -271,9 +273,7 @@ class DQNAgent:
                 state = self.preprocessor.process_state_for_memory(state)
 
             # run a single step.
-            env.render()
             action = self.select_action(state, isTraining=True)
-            assert action.shape[0] == state.shape[0]
             next_state, unclipped_reward, done, info = env.step(action)
             next_state = self.preprocessor.process_state_for_memory(next_state)
             reward = self.preprocessor.process_reward(unclipped_reward)
@@ -289,8 +289,7 @@ class DQNAgent:
             episode_reward += unclipped_reward
 
             self.step += 1
-            print str(self.step) + ': '
-            print reward
+
             # save models
             if self.step % self.model_save_freq == 0:
                 self.save_weights(os.path.join(model_dir, 'model-step-{}'.format(self.step)), overwrite=False)
@@ -401,7 +400,7 @@ class DQNAgent:
             print('---------------------------------------------')
             print('episode #: {}    Iteration #: {}    episode_reward: {}    epsilon: {}'.format(episode_idx, test_step, episode_reward, self.eval_policy.eps))
 
-        # env.close()
+        env.close()
 
         episode_rewards = np.array(episode_rewards)
         print('---------------End Evaluating!-----------------')
