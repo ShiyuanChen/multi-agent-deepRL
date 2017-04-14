@@ -98,7 +98,7 @@ class multiAgentEnv(object):
             self.obstacle_size[i][1] = h
 
             # added obstacle to grid
-            self.grid[x:(x + w - 1), y:(y + h - 1)] = GRID_OBSTACLE
+            self.grid[x:(x + w), y:(y + h)] = GRID_OBSTACLE
 
         self.frame = np.copy(self.grid)
 
