@@ -162,7 +162,7 @@ def main():  # noqa: D103
     # keras callback api for tensorboard
     callbacks = [TensorBoard(log_dir=os.path.join(outputpath, 'logs'), histogram_freq=0, write_graph=True, write_images=False)]
     dqn = DuelDQNAgent(model, preprocessor, memory, policy, num_actions=num_actions, gamma=.99, target_update_freq=30000, num_burn_in=50000, 
-                    train_freq=4, batch_size=32 / num_agents + 1, output_dir=outputpath, model_save_freq=1000000)
+                    train_freq=4, batch_size=32 / num_agents + 1, output_dir=outputpath, model_save_freq=50000)
 
     # compile the model. loss will be redefined inside the function
     dqn.compile(Adam(lr=.00025, clipnorm=10.), loss_func='mse')
