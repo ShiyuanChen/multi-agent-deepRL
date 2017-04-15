@@ -8,6 +8,7 @@ import keras.backend as K
 from keras.layers import Lambda, Input, Layer, Dense
 import numpy as np
 from gym import wrappers
+import time
 
 class DuelDQNAgent:
     """Class implementing DQN.
@@ -251,6 +252,8 @@ class DuelDQNAgent:
         state = None
         episode_reward = None
         need_eval = False
+        time_tic = 0
+        time_toc = 0
 
         [model_dir, video_dir] = self.create_output_dirs(self.output_dir, ['models','videos'])
 
@@ -268,6 +271,7 @@ class DuelDQNAgent:
         while self.step < num_iterations:
             # start a new episode
             if state is None:
+                time_tic = time.time()
                 episode_reward = 0.
                 self.preprocessor.reset()
                 state = env.resetAll()
@@ -298,13 +302,15 @@ class DuelDQNAgent:
                 self.save_weights(os.path.join(model_dir, 'model-step-{}'.format(self.step)), overwrite=False)
 
             if done: # end of episode
+                time_toc = time.time()
                 episode_rewards.append(episode_reward)
                 episode_length.append(self.step - last_episode_length)
                 last_episode_length = self.step
 
                 episode_idx += 1
                 print('---------------------------------------------')
-                print('episode #: {}    Iteration #: {}    episode_reward: {}    epsilon: {}'.format(episode_idx, self.step, episode_reward, self.policy.value))
+                print('episode #: {}    Iteration #: {}    Time: {}s    episode_reward: {}    epsilon: {}'.format(
+                       episode_idx, self.step, time_toc - time_tic, episode_reward, self.policy.value))
                 if episode_idx % episode_log_freq == 0:
                     episode_rewards = np.array(episode_rewards)
                     self.loss = np.array(self.loss)
