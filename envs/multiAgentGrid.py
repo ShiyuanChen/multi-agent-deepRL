@@ -4,7 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Reward: collision=-5; visit new cell=1; else=0
-REWARD_COLLISION = -5
+REWARD_COLLISION = -1
 REWARD_VISIT = 1
 REWARD_NONE = 0
 
