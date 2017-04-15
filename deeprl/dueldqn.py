@@ -59,6 +59,7 @@ class DuelDQNAgent:
                  train_freq,
                  batch_size,
                  output_dir,
+                 model_save_freq=1000000,
                  max_grad=10.):
 
         self.model = q_network
@@ -77,7 +78,7 @@ class DuelDQNAgent:
         self.batch_size = batch_size
         self.max_grad = max_grad
         self.output_dir = output_dir
-        self.model_save_freq = 1000000
+        self.model_save_freq = model_save_freq
         self.video_save_freq = 50
 
     def compile(self, optimizer, loss_func):
