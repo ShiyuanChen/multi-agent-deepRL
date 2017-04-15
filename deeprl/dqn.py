@@ -271,9 +271,9 @@ class DQNAgent:
                 state = self.preprocessor.process_state_for_memory(state)
 
             # run a single step.
-            env.render()
+            # env.render()
             action = self.select_action(state, isTraining=True)
-            assert action.shape[0] == state.shape[0]
+            # assert action.shape[0] == state.shape[0]
             next_state, unclipped_reward, done, info = env.step(action)
             next_state = self.preprocessor.process_state_for_memory(next_state)
             reward = self.preprocessor.process_reward(unclipped_reward)
@@ -286,11 +286,13 @@ class DQNAgent:
 
             # update weight
             metrics = self.update_policy()
-            episode_reward += unclipped_reward
+            for r in unclipped_reward:
+                episode_reward += r
 
             self.step += 1
-            print str(self.step) + ': '
-            print reward
+            # print str(self.step) + ': '
+            # print reward
+            # print episode_reward
             # save models
             if self.step % self.model_save_freq == 0:
                 self.save_weights(os.path.join(model_dir, 'model-step-{}'.format(self.step)), overwrite=False)

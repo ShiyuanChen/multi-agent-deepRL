@@ -273,6 +273,7 @@ class DuelDQNAgent:
                 state = self.preprocessor.process_state_for_memory(state)
 
             # run a single step.
+            # env.render()
             action = self.select_action(state, isTraining=True)
             next_state, unclipped_reward, done, info = env.step(action)
             next_state = self.preprocessor.process_state_for_memory(next_state)
@@ -286,7 +287,8 @@ class DuelDQNAgent:
 
             # update weight
             metrics = self.update_policy()
-            episode_reward += unclipped_reward
+            for r in unclipped_reward:
+                episode_reward += r
 
             self.step += 1
 
