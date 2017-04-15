@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('GTKAgg') 
+# matplotlib.use('GTKAgg') 
 import matplotlib.pyplot as plt
 
 # Reward: collision=-5; visit new cell=1; else=0

@@ -5,6 +5,7 @@ import os
 import random
 
 import numpy as np
+import keras.backend as K
 import tensorflow as tf
 from keras.layers import (Activation, Conv2D, Dense, Flatten, Input,
                           Permute)
@@ -20,7 +21,17 @@ from deeprl.policy import GreedyPolicy, GreedyEpsilonPolicy, LinearDecayGreedyEp
 from deeprl.preprocessors import HistoryPreprocessor, GridPreprocessor, PreprocessorSequence
 from keras.callbacks import TensorBoard
 
+def get_session():
+    num_threads = os.environ.get('OMP_NUM_THREADS')
 
+    if num_threads:
+        config = tf.ConfigProto(intra_op_parallelism_threads=num_threads)
+        config.gpu_options.allow_growth=True
+    else:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth=True
+        
+    return tf.Session(config=config)    
 
 def create_model(window, input_shape, num_actions,
                  model_name='q_network'):  # noqa: D103
@@ -55,11 +66,10 @@ def create_model(window, input_shape, num_actions,
     
     # keras model. Same setting as in the paper
     model = Sequential()
-    model.add(Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=input_dim))
-    model.add(Conv2D(64, (4, 4), strides=(2, 2), activation='relu'))
-    model.add(Conv2D(64, (3, 3), strides=(1, 1), activation='relu'))
+    model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu', input_shape=input_dim))
+    model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu'))
     model.add(Flatten())
-    model.add(Dense(512, activation='relu'))
+    model.add(Dense(64, activation='relu'))
     model.add(Dense(num_actions, activation='linear'))
     print(model.summary())
     return model
@@ -117,6 +127,9 @@ def main():  # noqa: D103
     outputpath = get_output_folder(args.save, args.env)
     print('Output Directory: ' + outputpath)
 
+
+    K.tensorflow_backend.set_session(get_session())
+
     # create DQN agent, create model, etc.
     num_agents = args.agents
     env = multiAgentEnv(grid_size=(50,50), num_actions=4, num_agents=num_agents, obstacle_numrange=(5,10), obstacle_sizerange=(2, 20), sensor_range=(10,10))
@@ -140,7 +153,7 @@ def main():  # noqa: D103
     dqn.compile(Adam(lr=.00025), loss_func='mse')
 
     if args.mode == 'train':
-        dqn.fit(env, callbacks=callbacks, num_iterations=5000000, max_episode_length=50000)
+        dqn.fit(env, callbacks=callbacks, num_iterations=5000000, max_episode_length=2500)
     else: #evaluate 100 episodes
         dqn.load_weights(args.load)
         dqn.evaluate(env, 100)
