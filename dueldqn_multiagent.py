@@ -22,6 +22,17 @@ from deeprl.preprocessors import HistoryPreprocessor, GridPreprocessor, Preproce
 from keras.callbacks import TensorBoard
 
 
+def get_session():
+    num_threads = os.environ.get('OMP_NUM_THREADS')
+
+    if num_threads:
+        config = tf.ConfigProto(intra_op_parallelism_threads=num_threads)
+        config.gpu_options.allow_growth=True
+    else:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth=True
+        
+    return tf.Session(config=config)  
 
 def create_model(window, input_shape, num_actions,
                  model_name='q_network'):  # noqa: D103
@@ -133,6 +144,7 @@ def main():  # noqa: D103
     outputpath = get_output_folder(args.save, args.env)
     print('Output Directory: ' + outputpath)
 
+    K.tensorflow_backend.set_session(get_session())
     # create DQN agent, create model, etc.
     num_agents = args.agents
     env = multiAgentEnv(grid_size=(50,50), num_actions=4, num_agents=num_agents, obstacle_numrange=(5,10), obstacle_sizerange=(2, 20), sensor_range=(10,10))
