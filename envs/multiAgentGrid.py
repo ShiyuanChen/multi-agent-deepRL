@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('GTKAgg') 
 import matplotlib.pyplot as plt
 
 # Reward: collision=-5; visit new cell=1; else=0
@@ -64,6 +66,7 @@ class multiAgentEnv(object):
         """ render the whole grid
             TODO: non-blocking plot
         """
+        plt.cla()
         img = np.zeros((self.frame.shape[0], self.frame.shape[1], 3), dtype = 'uint8')
         img[self.frame == GRID_EMPTY] = [255, 255, 255]
         img[self.frame == GRID_VISITED] = [150, 150, 150]
