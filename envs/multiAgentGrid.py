@@ -57,7 +57,7 @@ class multiAgentEnv(object):
                 elif self.frame[x][y] == GRID_EMPTY:
                     observation[xx][yy] = [255, 255, 255]
                 elif self.frame[x][y] == GRID_VISITED:
-                    observation[xx][yy] = [150, 150, 150]
+                    observation[xx][yy] = [170, 170, 170]
                 else:
                     observation[xx][yy] = [255, 0, 0]
         return observation
@@ -69,7 +69,7 @@ class multiAgentEnv(object):
         plt.cla()
         img = np.zeros((self.frame.shape[0], self.frame.shape[1], 3), dtype = 'uint8')
         img[self.frame == GRID_EMPTY] = [255, 255, 255]
-        img[self.frame == GRID_VISITED] = [150, 150, 150]
+        img[self.frame == GRID_VISITED] = [170, 170, 170]
         # img[self.frame == GRID_OBSTACLE] = [0, 0, 0]
         img[self.frame == GRID_AGENT] = [255, 0, 0]
 
