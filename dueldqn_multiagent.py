@@ -67,21 +67,37 @@ def create_model(window, input_shape, num_actions,
     
     # same low-level structure of DQN
     input = Input(shape=input_dim, name='input')
+    # with tf.name_scope('conv1'):
+    #     conv1 = Conv2D(32, (2, 2), strides=(2, 2), activation='relu')(input)
+    # with tf.name_scope('conv2'):
+    #     conv2 = Conv2D(32, (2, 2), strides=(2, 2), activation='relu')(conv1)
+    # flatten = Flatten()(conv2)
     with tf.name_scope('conv1'):
-        conv1 = Conv2D(32, (2, 2), strides=(2, 2), activation='relu')(input)
+        conv1 = Conv2D(32, (8, 8), strides=(4, 4), activation='relu')(input)
     with tf.name_scope('conv2'):
-        conv2 = Conv2D(32, (2, 2), strides=(2, 2), activation='relu')(conv1)
-    flatten = Flatten()(conv2)
+        conv2 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu')(conv1)
+    with tf.name_scope('conv3'):
+        conv3 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv2)
+    flatten = Flatten()(conv3)
 
     # value stream
+    # with tf.name_scope('fc4_value'):
+    #     fc4_value = Dense(64, activation='relu')(flatten)
+    # with tf.name_scope('fc5_value'):
+    #     fc5_value = Dense(1, activation='linear')(fc4_value)
     with tf.name_scope('fc4_value'):
-        fc4_value = Dense(64, activation='relu')(flatten)
+        fc4_value = Dense(512, activation='relu')(flatten)
     with tf.name_scope('fc5_value'):
         fc5_value = Dense(1, activation='linear')(fc4_value)
 
+
     # advantage stream
+    # with tf.name_scope('fc4_adv'):
+    #     fc4_adv = Dense(64, activation='relu')(flatten)
+    # with tf.name_scope('fc5_adv'):
+    #     fc5_adv = Dense(num_actions, activation='linear')(fc4_adv)
     with tf.name_scope('fc4_adv'):
-        fc4_adv = Dense(64, activation='relu')(flatten)
+        fc4_adv = Dense(512, activation='relu')(flatten)
     with tf.name_scope('fc5_adv'):
         fc5_adv = Dense(num_actions, activation='linear')(fc4_adv)
 

@@ -65,11 +65,18 @@ def create_model(window, input_shape, num_actions,
     input_dim = input_shape + (window,)
     
     # keras model. Same setting as in the paper
+    # model = Sequential()
+    # model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu', input_shape=input_dim))
+    # model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu'))
+    # model.add(Flatten())
+    # model.add(Dense(64, activation='relu'))
+    # model.add(Dense(num_actions, activation='linear'))
     model = Sequential()
-    model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu', input_shape=input_dim))
-    model.add(Conv2D(32, (2, 2), strides=(2, 2), activation='relu'))
+    model.add(Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=input_dim))
+    model.add(Conv2D(64, (4, 4), strides=(2, 2), activation='relu'))
+    model.add(Conv2D(64, (3, 3), strides=(1, 1), activation='relu'))
     model.add(Flatten())
-    model.add(Dense(64, activation='relu'))
+    model.add(Dense(512, activation='relu'))
     model.add(Dense(num_actions, activation='linear'))
     print(model.summary())
     return model
