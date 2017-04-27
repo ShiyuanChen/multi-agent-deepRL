@@ -160,7 +160,7 @@ def main():  # noqa: D103
     dqn.compile(Adam(lr=.00025), loss_func='mse')
 
     if args.mode == 'train':
-        dqn.fit(env, callbacks=callbacks, num_iterations=5000000, max_episode_length=2500)
+        dqn.fit(env, callbacks=callbacks, num_iterations=50000000, max_episode_length=2500)
     else: #evaluate 100 episodes
         dqn.load_weights(args.load)
         dqn.evaluate(env, 100)

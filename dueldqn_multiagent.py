@@ -173,7 +173,7 @@ def main():  # noqa: D103
 
     preprocessor = PreprocessorSequence([HistoryPreprocessor(history_length=4), GridPreprocessor(new_size=input_shape)])
     memory = ReplayMemory(200000, window_length=window)
-    policy = LinearDecayGreedyEpsilonPolicy(GreedyEpsilonPolicy(epsilon=0.1), attr_name='eps', start_value=0.1, end_value=0.01, num_steps=1000000)
+    policy = LinearDecayGreedyEpsilonPolicy(GreedyEpsilonPolicy(epsilon=1.0), attr_name='eps', start_value=1.0, end_value=0.01, num_steps=1000000)
 
     # keras callback api for tensorboard
     callbacks = [TensorBoard(log_dir=os.path.join(outputpath, 'logs'), histogram_freq=0, write_graph=True, write_images=False)]
@@ -184,7 +184,7 @@ def main():  # noqa: D103
     dqn.compile(Adam(lr=.00025, clipnorm=10.), loss_func='mse')
 
     if args.mode == 'train':
-        dqn.fit(env, callbacks=callbacks, num_iterations=5000000, max_episode_length=2500)
+        dqn.fit(env, callbacks=callbacks, num_iterations=50000000, max_episode_length=2500)
     else: #evaluate 100 episodes
         dqn.load_weights(args.load)
         dqn.evaluate(env, 100)
