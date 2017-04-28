@@ -151,7 +151,7 @@ def main():  # noqa: D103
     parser.add_argument('--env', default='multiAgentGrid', help='Atari env name')
     parser.add_argument('--save', default='output/dueling_dqn', help='Directory to save model to')
     parser.add_argument('--seed', default=0, type=int, help='Random seed')
-    parser.add_argument('--agents', default=5, type=int, help='Number of agents')
+    parser.add_argument('--agents', default=1, type=int, help='Number of agents')
     parser.add_argument('--mode', choices=['train', 'test'], default='train')
     parser.add_argument('--load', default='output/dueling_dqn', help='Directory to load model from')
 
@@ -163,7 +163,7 @@ def main():  # noqa: D103
     K.tensorflow_backend.set_session(get_session())
     # create DQN agent, create model, etc.
     num_agents = args.agents
-    env = multiAgentEnv(grid_size=(50,50), num_actions=4, num_agents=num_agents, obstacle_numrange=(5,10), obstacle_sizerange=(2, 20), sensor_range=(10,10))
+    env = multiAgentEnv(grid_size=(21,21), num_actions=4, num_agents=num_agents, obstacle_numrange=(2,5), obstacle_sizerange=(1, 10), sensor_range=(10,10))
     np.random.seed(args.seed)
     random.seed(args.seed)
     num_actions = env.action_space.n
@@ -178,13 +178,13 @@ def main():  # noqa: D103
     # keras callback api for tensorboard
     callbacks = [TensorBoard(log_dir=os.path.join(outputpath, 'logs'), histogram_freq=0, write_graph=True, write_images=False)]
     dqn = DuelDQNAgent(model, preprocessor, memory, policy, num_actions=num_actions, gamma=.99, target_update_freq=30000, num_burn_in=50000, 
-                    train_freq=4, batch_size=32 / num_agents + 1, output_dir=outputpath, model_save_freq=50000)
+                    train_freq=4, batch_size=32 / num_agents, output_dir=outputpath, model_save_freq=50000)
 
     # compile the model. loss will be redefined inside the function
     dqn.compile(Adam(lr=.00025, clipnorm=10.), loss_func='mse')
 
     if args.mode == 'train':
-        dqn.fit(env, callbacks=callbacks, num_iterations=50000000, max_episode_length=2500)
+        dqn.fit(env, callbacks=callbacks, num_iterations=50000000, max_episode_length=1000)
     else: #evaluate 100 episodes
         dqn.load_weights(args.load)
         dqn.evaluate(env, 100)

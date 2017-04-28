@@ -62,6 +62,22 @@ class multiAgentEnv(object):
                     observation[xx][yy] = [255, 0, 0]
         return observation
 
+    def gridToGlobalObservation(self):
+        """ global view
+        """
+        observation = np.zeros((self.frame.shape[0], self.frame.shape[1], 3), dtype = 'uint8')
+        for x in xrange(self.frame.shape[0]):
+            for y in xrange(self.frame.shape[1]):
+                if self.frame[x][y] == GRID_OBSTACLE:
+                    observation[x][y] = [0, 0, 0]
+                elif self.frame[x][y] == GRID_EMPTY:
+                    observation[x][y] = [255, 255, 255]
+                elif self.frame[x][y] == GRID_VISITED:
+                    observation[x][y] = [170, 170, 170]
+                else:
+                    observation[x][y] = [255, 0, 0]
+        return observation
+
     def render(self):
         """ render the whole grid
             TODO: non-blocking plot
@@ -86,7 +102,7 @@ class multiAgentEnv(object):
         self.num_obstacles = np.random.randint(self.obstacle_numrange[0], self.obstacle_numrange[1] + 1)
         self.obstacle_pos = np.zeros((self.num_obstacles, 2), dtype='int32')
         self.obstacle_size = np.zeros((self.num_obstacles, 2), dtype='int32')
-        self.observations = np.zeros((self.num_agents, 2 * self.sensor_range[0] + 1, 2 * self.sensor_range[1] + 1, 3), dtype='uint8')
+        self.observations = np.zeros((self.num_agents, self.grid_size[0], self.grid_size[1], 3), dtype='uint8')
         self.unvisited_count = 0
         self.resetted = True
         for i in xrange(self.num_obstacles):
@@ -120,7 +136,7 @@ class multiAgentEnv(object):
             self.frame[x][y] = GRID_AGENT
 
         for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
+            self.observations[i] = self.gridToGlobalObservation()
 
         for x in xrange(self.grid_size[0]):
             for y in xrange(self.grid_size[1]):
@@ -152,7 +168,7 @@ class multiAgentEnv(object):
             self.frame[x][y] = GRID_AGENT
 
         for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
+            self.observations[i] = self.gridToGlobalObservation()
 
         for x in xrange(self.grid_size[0]):
             for y in xrange(self.grid_size[1]):
@@ -195,7 +211,7 @@ class multiAgentEnv(object):
                 rewards[agentid] = REWARD_VISIT
 
         for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToCenteredObservation(self.agent_pos[i])
+            self.observations[i] = self.gridToGlobalObservation()
             
         if self.unvisited_count == 0:
             terminals = True
