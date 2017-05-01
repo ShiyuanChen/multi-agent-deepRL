@@ -93,16 +93,16 @@ class multiAgentEnv(object):
         plt.draw()
         return img
 
-    def resetAll(self):
+    def reset(self):
         """ reset env and randomize obstacles
         """
         # 0: empty grid, 1: visited grid, 2: obstacle/boundary, 3: agent
         self.grid = np.zeros((self.grid_size[0], self.grid_size[1]), dtype='uint8')
-        self.agent_pos = np.zeros((self.num_agents, 2), dtype='int32')
+        self.agent_pos = np.zeros((2,), dtype='int32')
         self.num_obstacles = np.random.randint(self.obstacle_numrange[0], self.obstacle_numrange[1] + 1)
         self.obstacle_pos = np.zeros((self.num_obstacles, 2), dtype='int32')
         self.obstacle_size = np.zeros((self.num_obstacles, 2), dtype='int32')
-        self.observations = np.zeros((self.num_agents, self.grid_size[0], self.grid_size[1], 3), dtype='uint8')
+        self.observations = np.zeros((self.grid_size[0], self.grid_size[1], 3), dtype='uint8')
         self.unvisited_count = 0
         self.resetted = True
         for i in xrange(self.num_obstacles):
@@ -121,22 +121,20 @@ class multiAgentEnv(object):
 
         self.frame = np.copy(self.grid)
 
-        for i in xrange(self.num_agents):
-            flag = True
-            x = -1
-            y = -1
-            while (flag):
-                x = np.random.randint(0, self.grid_size[0])
-                y = np.random.randint(0, self.grid_size[1])
-                if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
-                    flag = False
+        flag = True
+        x = -1
+        y = -1
+        while (flag):
+            x = np.random.randint(0, self.grid_size[0])
+            y = np.random.randint(0, self.grid_size[1])
+            if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
+                flag = False
 
-            self.agent_pos[i][0] = x
-            self.agent_pos[i][1] = y
-            self.frame[x][y] = GRID_AGENT
+        self.agent_pos[0] = x
+        self.agent_pos[1] = y
+        self.frame[x][y] = GRID_AGENT
 
-        for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToGlobalObservation()
+        self.observations = self.gridToGlobalObservation()
 
         for x in xrange(self.grid_size[0]):
             for y in xrange(self.grid_size[1]):
@@ -146,36 +144,36 @@ class multiAgentEnv(object):
         return self.observations
 
 
-    def reset(self):
-        """ reset visited grid and agent positions only 
-        """
-        # MUST call resetAll first!
-        assert(self.resetted)
-        self.frame = np.copy(self.grid)
-        self.unvisited_count = 0
-        for i in xrange(self.num_agents):
-            flag = True
-            x = -1
-            y = -1
-            while (flag):
-                x = np.random.randint(0, self.grid_size[0])
-                y = np.random.randint(0, self.grid_size[1])
-                if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
-                    flag = False
+    # def reset(self):
+    #     """ reset visited grid and agent positions only 
+    #     """
+    #     # MUST call resetAll first!
+    #     assert(self.resetted)
+    #     self.frame = np.copy(self.grid)
+    #     self.unvisited_count = 0
+    #     for i in xrange(self.num_agents):
+    #         flag = True
+    #         x = -1
+    #         y = -1
+    #         while (flag):
+    #             x = np.random.randint(0, self.grid_size[0])
+    #             y = np.random.randint(0, self.grid_size[1])
+    #             if (self.frame[x][y] != GRID_OBSTACLE and self.frame[x][y] != GRID_AGENT):
+    #                 flag = False
 
-            self.agent_pos[i][0] = x
-            self.agent_pos[i][1] = y
-            self.frame[x][y] = GRID_AGENT
+    #         self.agent_pos[i][0] = x
+    #         self.agent_pos[i][1] = y
+    #         self.frame[x][y] = GRID_AGENT
 
-        for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToGlobalObservation()
+    #     for i in xrange(self.num_agents):
+    #         self.observations[i] = self.gridToGlobalObservation()
 
-        for x in xrange(self.grid_size[0]):
-            for y in xrange(self.grid_size[1]):
-                if self.frame[x][y] == GRID_EMPTY:
-                    self.unvisited_count += 1
+    #     for x in xrange(self.grid_size[0]):
+    #         for y in xrange(self.grid_size[1]):
+    #             if self.frame[x][y] == GRID_EMPTY:
+    #                 self.unvisited_count += 1
 
-        return self.observations
+    #     return self.observations
 
     def step(self, actions):
         """ actions: list of action values
@@ -184,37 +182,34 @@ class multiAgentEnv(object):
             observations
             Reward: -5: collision; 1: unvisited; 0: visited
         """
-        assert(len(actions) == self.num_agents and self.resetted)
-        order = np.random.permutation(self.num_agents)
+        assert(self.resetted)
         # hashtable = np.zeros_like(self.frame)
         # next_pos = np.zeros_like(self.agent_pos)
 
-        rewards = np.zeros((self.num_agents,), dtype='float64')
+        rewards = 0.
         terminals = False
-        for agentid in order:
-            x = self.agent_pos[agentid][0] + self.directions[actions[agentid]]
-            y = self.agent_pos[agentid][1] + self.directions[actions[agentid] + 1]
-            if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] >= GRID_OBSTACLE:
-                rewards[agentid] = REWARD_COLLISION
-            elif self.frame[x][y] == GRID_VISITED:
-                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = GRID_VISITED
-                self.frame[x][y] = GRID_AGENT
-                self.agent_pos[agentid][0] = x
-                self.agent_pos[agentid][1] = y
-                rewards[agentid] = REWARD_NONE
-            else:
-                self.frame[self.agent_pos[agentid][0]][self.agent_pos[agentid][1]] = GRID_VISITED
-                self.frame[x][y] = GRID_AGENT
-                self.agent_pos[agentid][0] = x
-                self.agent_pos[agentid][1] = y
-                self.unvisited_count -= 1
-                rewards[agentid] = REWARD_VISIT
+        x = self.agent_pos[0] + self.directions[actions]
+        y = self.agent_pos[1] + self.directions[actions + 1]
+        if x < 0 or y < 0 or x >= self.grid_size[0] or y >= self.grid_size[1] or self.frame[x][y] >= GRID_OBSTACLE:
+            rewards = REWARD_COLLISION
+        elif self.frame[x][y] == GRID_VISITED:
+            self.frame[self.agent_pos[0]][self.agent_pos[1]] = GRID_VISITED
+            self.frame[x][y] = GRID_AGENT
+            self.agent_pos[0] = x
+            self.agent_pos[1] = y
+            rewards = REWARD_NONE
+        else:
+            self.frame[self.agent_pos[0]][self.agent_pos[1]] = GRID_VISITED
+            self.frame[x][y] = GRID_AGENT
+            self.agent_pos[0] = x
+            self.agent_pos[1] = y
+            self.unvisited_count -= 1
+            rewards = REWARD_VISIT
 
-        for i in xrange(self.num_agents):
-            self.observations[i] = self.gridToGlobalObservation()
+        self.observations = self.gridToGlobalObservation()
             
         if self.unvisited_count == 0:
             terminals = True
 
-        return self.observations, rewards, terminals, self.unvisited_count
+        return self.observations, rewards, terminals, {'unvisited_num': self.unvisited_count}
 
