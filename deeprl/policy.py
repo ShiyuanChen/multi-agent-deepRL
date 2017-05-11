@@ -100,6 +100,7 @@ class GreedyEpsilonPolicy(Policy):
     """
     def __init__(self, epsilon=.05):
         self.eps = epsilon
+        np.random.seed(0)
         
 
     def select_action(self, q_values, **kwargs):
@@ -118,13 +119,18 @@ class GreedyEpsilonPolicy(Policy):
         """
         assert q_values.ndim == 2
         num_agents = q_values.shape[0]
+        num_actions = q_values.shape[1]
         selected_actions = np.zeros(num_agents, dtype='int32')
 
         for i in xrange(num_agents):
             if np.random.uniform() < self.eps:
                 selected_actions[i] = np.random.random_integers(0, q_values.shape[1] - 1)
             else:
-                selected_actions[i] = np.argmax(q_values[i])
+                softmax = np.zeros(num_actions)
+                softmax = np.exp(q_values[i])
+                cumsum = np.cumsum(softmax)
+                selected_actions[i] = np.searchsorted(cumsum, np.random.uniform(0., cumsum[-1]))
+                # selected_actions[i] = np.argmax(q_values[i])
         return selected_actions
 
 
